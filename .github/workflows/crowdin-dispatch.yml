@@ -38,4 +38,4 @@ jobs:
       - name: Dispatch to workflow
         run: |
           GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-          gh workflow run crowdin-translate.yml --ref ${{ env.BRANCH }} --repo "${{ github.repository_owner }}/${{ github.repository }}"
+          gh workflow run crowdin-translate.yml --ref ${{ env.BRANCH }} --repo ${{ github.repository }}

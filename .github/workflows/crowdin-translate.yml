@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: get head for dispatch
-        if: ${{ env.HEAD_BRANCH == "" }}
+        if: ${{ env.HEAD_BRANCH == '' }}
         run: |
           echo "HEAD_BRANCH=${{ github.ref }}" >> $GITHUB_ENV
       - name: translate work goes here

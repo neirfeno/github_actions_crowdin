@@ -8,8 +8,14 @@ on:
 jobs:
   sync-translations:
     runs-on: ubuntu-latest
+    env:
+      HEAD_BRANCH: ${{ github.head_ref }}
 
     steps:
+      - name: get head for dispatch
+        if: ${{ env.HEAD_BRANCH == "" }}
+        run: |
+          echo "HEAD_BRANCH=${{ github.ref }}" >> $GITHUB_ENV
       - name: translate work goes here
         run: |
-          echo "Head branch is: ${{ github.head_ref }}"
+          echo "Head branch is: ${{ env.HEAD_BRANCH }}"

@@ -22,7 +22,7 @@ jobs:
 
       - name: Lookup branch ID
         run: |
-          BRANCH_ID=$(curl -sH "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" "https://api.crowdin.com/api/v2/projects/451006/branches?name=${{ github.head_ref }}" | jq ".data[0].data.id")
+          BRANCH_ID=$(curl -sH "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" "https://api.crowdin.com/api/v2/projects/451006/branches?name=${{ env.BRANCH }}" | jq ".data[0].data.id")
           if [ "$BRANCH_ID" != "null" ]; then
             echo "BRANCH_ID=${BRANCH_ID}" >> $GITHUB_ENV
           fi

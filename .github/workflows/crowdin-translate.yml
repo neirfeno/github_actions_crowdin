@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: translate work goes here
         run: |
-          echo "Head branch is: ${{ github.head_ref }}
+          echo "Head branch is: ${{ github.head_ref }}"

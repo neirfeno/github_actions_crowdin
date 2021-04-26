@@ -15,7 +15,8 @@ jobs:
       - name: get head for dispatch
         if: ${{ env.HEAD_BRANCH == '' }}
         run: |
-          echo "HEAD_BRANCH=${{ github.ref }}" >> $GITHUB_ENV
+          HEAD_BRANCH=$(echo "${{ github.ref }}" | sed 's/^[^\/]*\/[^\/]*\///')
+          echo "HEAD_BRANCH=${HEAD_BRANCH}" >> $GITHUB_ENV
       - name: translate work goes here
         run: |
           echo "Head branch is: ${{ env.HEAD_BRANCH }}"

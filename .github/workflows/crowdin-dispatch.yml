@@ -8,4 +8,6 @@ jobs:
     steps:
       - name: Verify dispatch is from Crowdin
         run: |
-          echo "We were called with ${{ github.event.client_payload.project_id }}"
+          echo "We were called for project: ${{ github.event.client_payload.project_id }}"
+          BRANCH=$(echo "${{ github.event.client_payload.file }}" | tr '/' '\n' | head -2 | tail -1)
+          echo "On branch: ${BRANCH}"

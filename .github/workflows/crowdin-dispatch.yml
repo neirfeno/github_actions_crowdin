@@ -37,4 +37,5 @@ jobs:
 
       - name: Dispatch to workflow
         run: |
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
           gh workflow run crowdin-translate.yml --ref ${{ env.BRANCH }}

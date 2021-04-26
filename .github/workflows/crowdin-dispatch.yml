@@ -1,0 +1,11 @@
+name: Dispatch Crowdin callbacks to appropriate PR workflows
+on:
+  repository_dispatch:
+
+jobs:
+  dispatch-crowdin-callback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify dispatch is from Crowdin
+        run: |
+          echo "We were called"

@@ -21,6 +21,18 @@ jobs:
           echo "PROJECT=${PROJECT}" >> $GITHUB_ENV
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
 
+      - name: Verify PR open
+        run: |
+          PULL_REQUEST=$(curl \
+                          -H "Authorization: token ${{ secrets.TEST_PAT }}" \
+                          -H "Accept: application/vnd.github.v3+json" \
+                          https://api.github.com/repos/${{ github.repository }}/pulls?base=master&head=${{ env.BRANCH }}&state=open \
+                        | jq --raw-output '.[] | select( .draft = false ) | .head.ref')
+          if [ -z "$PULL_REQUEST" ]; then
+            echo "No pull request exists for branch"
+            exit 1
+          fi
+
       - name: Lookup branch ID
         run: |
           BRANCH_ID=$(curl -sH "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" "https://api.crowdin.com/api/v2/projects/${{ env.PROJECT }}/branches?name=${{ env.BRANCH }}" | jq ".data[0].data.id")
@@ -43,4 +55,4 @@ jobs:
             -H "Authorization: token ${{ secrets.TEST_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/crowdin-translate.yml/dispatches \
-            -d '{"ref":"${{ env.BRANCH }}"}'
+            -d '{"ref":"${{ env.BRANCH }}"}' -q

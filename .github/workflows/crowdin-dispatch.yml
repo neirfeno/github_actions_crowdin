@@ -8,4 +8,4 @@ jobs:
     steps:
       - name: Verify dispatch is from Crowdin
         run: |
-          echo "We were called"
+          echo "We were called with ${{ github.event.client_payload.project_id }}"

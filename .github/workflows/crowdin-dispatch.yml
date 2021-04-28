@@ -57,9 +57,9 @@ jobs:
                                 | jq ".data[0].data.translationProgress")
           echo "Translation progress: ${TRANSLATION_PROGRESS}%"
           if [ "$TRANSLATION_PROGRESS" == "100" ]; then
-            echo "::set-output name=ready=1"
+            echo "::set-output name=ready::1"
           else
-            echo "::set-output name=ready=0"
+            echo "::set-output name=ready::0"
           fi
 
       # Dispatch the event to the relevant workflow branch

@@ -6,53 +6,69 @@ on:
 jobs:
   dispatch-crowdin-callback:
     runs-on: ubuntu-latest
-    env:
-      PROJECT: ""
-      BRANCH: ""
-      BRANCH_ID: ""
-      TRANSLATIONS_READY: 0
     steps:
+      # Parse the incoming event data for info (PROJECT, BRANCH)
       - name: Extract info from event
+        id: crowdin_event
         run: |
           PROJECT="${{ github.event.client_payload.project_id }}"
           BRANCH=$(echo "${{ github.event.client_payload.file }}" | tr '/' '\n' | head -2 | tail -1)
           echo "We were called for project: ${PROJECT}"
           echo "On branch: ${BRANCH}"
-          echo "PROJECT=${PROJECT}" >> $GITHUB_ENV
-          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "::set-output name=project::${PROJECT}"
+          echo "::set-output name=branch::${BRANCH}"
 
+      # Lookup GitHub to check that the PR is still open for this BRANCH
       - name: Verify PR open
         run: |
-          PULL_REQUEST=$(curl \
+          PULL_REQUEST=$(curl -s \
                           -H "Authorization: token ${{ secrets.TEST_PAT }}" \
                           -H "Accept: application/vnd.github.v3+json" \
-                          https://api.github.com/repos/${{ github.repository }}/pulls?base=master&head=${{ env.BRANCH }}&state=open \
+                          "https://api.github.com/repos/${{ github.repository }}/pulls?base=master&head=${{ step.crowdin_event.outputs.branch }}&state=open" \
                         | jq --raw-output '.[] | select( .draft = false ) | .head.ref')
           if [ -z "$PULL_REQUEST" ]; then
             echo "No pull request exists for branch"
             exit 1
           fi
 
+      # Lookup Crowdin for the BRANCH_ID for the provided BRANCH
       - name: Lookup branch ID
+        id: crowdin_branch
         run: |
-          BRANCH_ID=$(curl -sH "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" "https://api.crowdin.com/api/v2/projects/${{ env.PROJECT }}/branches?name=${{ env.BRANCH }}" | jq ".data[0].data.id")
+          BRANCH_ID=$(curl -s \
+                      -H "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}"
+                      "https://api.crowdin.com/api/v2/projects/${{ step.crowdin_event.outputs.project }}/branches?name=${{ step.crowdin_event.outputs.branch }}"
+                    | jq ".data[0].data.id")
           if [ "$BRANCH_ID" != "null" ]; then
-            echo "BRANCH_ID=${BRANCH_ID}" >> $GITHUB_ENV
+            echo "The Crowdin id for this branch is: ${BRANCH_ID}"
+            echo "::set-output name=branch_id::${BRANCH_ID}"
+          else
+            echo "No branch was found"
+            exit 1
           fi
 
+      # Check the status of the Branch in Crowdin to see if all files are translated
       - name: Verify translations complete
+        id: branch_translations
         run: |
-          TRANSLATION_PROGRESS=$(curl -sH "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" "https://api.crowdin.com/api/v2/projects/${{ env.PROJECT }}/branches/${{ env.BRANCH_ID }}/languages/progress" | jq ".data[0].data.translationProgress")
+          TRANSLATION_PROGRESS=$(curl -s \
+                                  -H "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" \
+                                  "https://api.crowdin.com/api/v2/projects/${{ step.crowdin_event.outputs.project }}/branches/${{ step.crowdin_branch.outputs.branch_id }}/languages/progress" \
+                                | jq ".data[0].data.translationProgress")
           echo "Translation progress: ${TRANSLATION_PROGRESS}%"
           if [ "TRANSLATION_PROGRESS" == "100" ]; then
-            echo "TRANSLATIONS_READY=1" >> $GITHUB_ENV
+            echo "::set-output name=ready=1"
+          else
+            echo "::set-output name=ready=0"
           fi
 
+      # Dispatch the event to the relevant workflow branch
       - name: Dispatch to workflow
+        if: ${{ step.branch_translations.outputs.ready == 1 }}
         run: |
           curl \
             -X POST \
             -H "Authorization: token ${{ secrets.TEST_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/crowdin-translate.yml/dispatches \
-            -d '{"ref":"${{ env.BRANCH }}"}' -q
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/crowdin-translate.yml/dispatches" \
+            -d '{"ref":"${{ step.crowdin_event.outputs.branch }}"}' -q

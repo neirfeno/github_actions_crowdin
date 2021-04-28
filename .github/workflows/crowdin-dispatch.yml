@@ -24,7 +24,7 @@ jobs:
           PULL_REQUEST=$(curl -s \
                           -H "Authorization: token ${{ secrets.TEST_PAT }}" \
                           -H "Accept: application/vnd.github.v3+json" \
-                          "https://api.github.com/repos/${{ github.repository }}/pulls?base=master&head=${{ step.crowdin_event.outputs.branch }}&state=open" \
+                          "https://api.github.com/repos/${{ github.repository }}/pulls?base=master&head=${{ steps.crowdin_event.outputs.branch }}&state=open" \
                         | jq --raw-output '.[] | select( .draft = false ) | .head.ref')
           if [ -z "$PULL_REQUEST" ]; then
             echo "No pull request exists for branch"
@@ -37,7 +37,7 @@ jobs:
         run: |
           BRANCH_ID=$(curl -s \
                       -H "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}"
-                      "https://api.crowdin.com/api/v2/projects/${{ step.crowdin_event.outputs.project }}/branches?name=${{ step.crowdin_event.outputs.branch }}"
+                      "https://api.crowdin.com/api/v2/projects/${{ steps.crowdin_event.outputs.project }}/branches?name=${{ steps.crowdin_event.outputs.branch }}"
                     | jq ".data[0].data.id")
           if [ "$BRANCH_ID" != "null" ]; then
             echo "The Crowdin id for this branch is: ${BRANCH_ID}"
@@ -53,7 +53,7 @@ jobs:
         run: |
           TRANSLATION_PROGRESS=$(curl -s \
                                   -H "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" \
-                                  "https://api.crowdin.com/api/v2/projects/${{ step.crowdin_event.outputs.project }}/branches/${{ step.crowdin_branch.outputs.branch_id }}/languages/progress" \
+                                  "https://api.crowdin.com/api/v2/projects/${{ steps.crowdin_event.outputs.project }}/branches/${{ steps.crowdin_branch.outputs.branch_id }}/languages/progress" \
                                 | jq ".data[0].data.translationProgress")
           echo "Translation progress: ${TRANSLATION_PROGRESS}%"
           if [ "TRANSLATION_PROGRESS" == "100" ]; then
@@ -64,11 +64,11 @@ jobs:
 
       # Dispatch the event to the relevant workflow branch
       - name: Dispatch to workflow
-        if: ${{ step.branch_translations.outputs.ready == 1 }}
+        if: ${{ steps.branch_translations.outputs.ready == 1 }}
         run: |
           curl \
             -X POST \
             -H "Authorization: token ${{ secrets.TEST_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/actions/workflows/crowdin-translate.yml/dispatches" \
-            -d '{"ref":"${{ step.crowdin_event.outputs.branch }}"}' -q
+            -d '{"ref":"${{ steps.crowdin_event.outputs.branch }}"}' -q

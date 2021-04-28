@@ -56,7 +56,7 @@ jobs:
                                   "https://api.crowdin.com/api/v2/projects/${{ steps.crowdin_event.outputs.project }}/branches/${{ steps.crowdin_branch.outputs.branch_id }}/languages/progress" \
                                 | jq ".data[0].data.translationProgress")
           echo "Translation progress: ${TRANSLATION_PROGRESS}%"
-          if [ "TRANSLATION_PROGRESS" == "100" ]; then
+          if [ "$TRANSLATION_PROGRESS" == "100" ]; then
             echo "::set-output name=ready=1"
           else
             echo "::set-output name=ready=0"

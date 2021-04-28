@@ -36,8 +36,8 @@ jobs:
         id: crowdin_branch
         run: |
           BRANCH_ID=$(curl -s \
-                      -H "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}"
-                      "https://api.crowdin.com/api/v2/projects/${{ steps.crowdin_event.outputs.project }}/branches?name=${{ steps.crowdin_event.outputs.branch }}"
+                      -H "Authorization: Bearer ${{ secrets.CROWDIN_PAT }}" \
+                      "https://api.crowdin.com/api/v2/projects/${{ steps.crowdin_event.outputs.project }}/branches?name=${{ steps.crowdin_event.outputs.branch }}" \
                     | jq ".data[0].data.id")
           if [ "$BRANCH_ID" != "null" ]; then
             echo "The Crowdin id for this branch is: ${BRANCH_ID}"
